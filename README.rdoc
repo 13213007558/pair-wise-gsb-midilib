@@ -230,6 +230,38 @@ pressure) on channel 5 down one octave.
  File.open('my_output_file.mid', 'wb') { | file | seq.write(file) }
 
 
+=== Parsing a Raw MIDI Byte Stream
+
+MIDI devices deliver raw MIDI 1.0 bytes in blocks that may be split at any
+point, with no +MThd+ header and no delta times. MIDI::IO::StreamParser turns
+those bytes into the same event objects used elsewhere in midilib. Call #feed
+once per received block; it returns the events completed by that block. Stamp
+each event with its own reception time if you need one. Call #finish when the
+stream ends to detect truncated messages.
+
+
+ require 'midilib'
+
+ parser = MIDI::IO::StreamParser.new
+ # The default system exclusive payload cap is 1 MiB; pass
+ # max_sysex_bytes: to override it.
+
+ events = parser.feed([0x90, 0x40, 0x40]) # NoteOn ch0 note 64 vel 64
+ events.concat(parser.feed([0x40, 0x7f])) # running status repeats the status
+
+ events.each { | event | event.time_from_start = clock.now }
+
+ parser.finish # raises if a message or sysex dump is left incomplete
+
+Channel voice running status is preserved across calls; system common
+messages and system exclusive dumps clear it. System realtime bytes (clock,
+start, continue, stop, active sensing, reset) are returned immediately, even
+when they appear between the data bytes of another message or inside a system
+exclusive dump, without disturbing the interrupted message. A system
+exclusive message larger than the configured maximum, or any malformed byte,
+raises a MIDI::IO::StreamParser::Error.
+
+
 === Manipulating tracks
 
 If you modify a track's list of events directly, don't forget to call

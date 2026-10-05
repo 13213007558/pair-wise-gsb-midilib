@@ -261,8 +261,21 @@ module MIDI
   end
 
   class SystemCommon < Event
-    def initialize(status, delta_time)
+    # Raw data bytes (not including the status byte) for system common
+    # messages that do not have their own subclass, such as MIDI time code
+    # quarter frame messages (0xF1).
+    attr_accessor :data
+
+    def initialize(status, delta_time, data = nil)
       super(status, delta_time)
+      @data = data
+    end
+
+    def data_as_bytes
+      data = []
+      data << @status
+      data << @data unless @data.nil?
+      data.flatten
     end
   end
 

@@ -48,6 +48,8 @@ module MIDI
   #++
   # System exclusive start
   SYSEX = 0xF0
+  # MIDI time code quarter frame: one data byte
+  MTC_QUARTER_FRAME = 0xF1
   # Beats from top: LSB/MSB 6 ticks = 1 beat
   SONG_POINTER = 0xF2
   # Val = number of song
