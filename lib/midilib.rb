@@ -10,6 +10,7 @@ require_relative 'midilib/sequence'
 require_relative 'midilib/track'
 require_relative 'midilib/io/seqreader'
 require_relative 'midilib/io/seqwriter'
+require_relative 'midilib/io/stream_parser'
 
 # --
 # consts.rb, utils.rb, and event.rb are included by these files.
