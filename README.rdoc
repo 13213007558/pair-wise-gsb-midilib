@@ -77,6 +77,19 @@ change that by setting a sequence's reader_class or writer_class attributes.
 Instances of the classes contained in those attributes are created and used
 whenever the sequence reads or writes itself.
 
+When writing, passing <tt>compact: true</tt> to MIDI::Sequence#write (or to
+MIDI::IO::SeqWriter.new) lets the writer reorder events that share the same
+start time so the file uses fewer bytes, without changing what the file
+plays. Events on unrelated channels may be interleaved to take better
+advantage of running status, while events that affect each other (for
+example controllers, program changes, and same-pitch note on/off pairs on
+the same channel) keep their required order. Meta and SysEx events cancel
+running status, and the optimizer accounts for that cost. Small simultaneous
+groups are ordered optimally; larger groups use a bounded beam search and
+are flagged in the writer's +compact_report+, which tells you whether the
+optimum was found and how many bytes were saved. Compact mode is off by
+default, and the original event order is written unchanged.
+
 === MIDI::Track
 
 A track contains an array of events.

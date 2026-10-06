@@ -2,14 +2,21 @@
 
 require_relative '../event'
 require_relative '../utils'
+require_relative 'compact_order'
 
 module MIDI
   module IO
     class SeqWriter
-      def initialize(seq, midi_format = 1, &block) # :yields: num_tracks, index
+      # When +compact+ is true, events that share a start time may be
+      # reordered so the file uses fewer bytes. See IO::CompactOrder.
+      attr_reader :compact_report
+
+      def initialize(seq, midi_format = 1, compact: false, &block) # :yields: num_tracks, index
         @seq = seq
         @midi_format = midi_format || 1
+        @compact = compact
         @update_block = block
+        @compact_report = nil
       end
 
       # Writes a MIDI format 1 file.
@@ -27,6 +34,7 @@ module MIDI
 
         @io = io
         @bytes_written = 0
+        @compact_report = nil
         write_header
         @update_block.call(nil, @seq.tracks.length, 0) if @update_block
         @seq.tracks.each_with_index do |track, i|
@@ -51,9 +59,11 @@ module MIDI
 
         write_instrument(track.instrument)
 
+        pairs = event_write_order(track)
+
         prev_status = 0
-        track.events.each do |event|
-          write_var_len(event.delta_time) unless event.is_a?(Realtime)
+        pairs.each do |event, delta_time|
+          write_var_len(delta_time) unless event.is_a?(Realtime)
 
           data = event.data_as_bytes
           status = data[0] # status byte plus channel number, if any
@@ -78,6 +88,19 @@ module MIDI
         @io.seek(track_size_file_pos)
         write32(@bytes_written)
         @io.seek(0, ::IO::SEEK_END)
+      end
+
+      # Returns [event, delta_time] pairs in the order they should be
+      # written. With compact mode off this is the track's original order;
+      # with compact mode on, simultaneous events may be reordered (see
+      # IO::CompactOrder) and the reorder report is accumulated into
+      # +compact_report+.
+      def event_write_order(track)
+        return track.events.map { |event| [event, event.delta_time] } unless @compact
+
+        pairs, report = CompactOrder.reorder(track.events)
+        accumulate_compact_report(report)
+        pairs
       end
 
       # If we can use a running status byte, delete the status byte from
@@ -116,6 +139,19 @@ module MIDI
           # Can't compress data
           status + chan
         end
+      end
+
+      def accumulate_compact_report(report)
+        @compact_report ||= {
+          optimal: true, groups: 0, exact_groups: 0,
+          original_bytes: 0, optimized_bytes: 0, tracks: []
+        }
+        @compact_report[:optimal] &&= report[:optimal]
+        @compact_report[:groups] += report[:groups]
+        @compact_report[:exact_groups] += report[:exact_groups]
+        @compact_report[:original_bytes] += report[:original_bytes]
+        @compact_report[:optimized_bytes] += report[:optimized_bytes]
+        @compact_report[:tracks] << report
       end
 
       def write_instrument(instrument)

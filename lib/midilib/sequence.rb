@@ -144,9 +144,15 @@ module MIDI
       reader.read_from(io)
     end
 
-    # Writes to a MIDI stream. +midi_format+ defaults to 1.
-    def write(io, midi_format = 1, &block) # :yields: track, num_tracks, index
-      writer = @writer_class.new(self, midi_format, &block)
+    # Writes to a MIDI stream. +midi_format+ defaults to 1. When +compact+
+    # is true, simultaneous events may be reordered to produce a smaller
+    # file without changing what the file plays (see IO::CompactOrder).
+    def write(io, midi_format = 1, compact: false, &block) # :yields: track, num_tracks, index
+      writer = if compact
+                 @writer_class.new(self, midi_format, compact: true, &block)
+               else
+                 @writer_class.new(self, midi_format, &block)
+               end
       writer.write_to(io)
     end
 
