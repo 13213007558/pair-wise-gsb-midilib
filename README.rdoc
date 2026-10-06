@@ -187,6 +187,16 @@ To write a MIDI file, call the write method, passing in an IO object.
  # Write the sequence to a MIDI file.
  File.open('my_output_file.mid', 'wb') { | file | seq.write(file) }
 
+Pass `compact: true` to reorder events with equal delta times when doing so
+saves running-status bytes. Events in unrelated MIDI channels may be moved,
+while note, controller, program-change, pitch-bend, channel-pressure, meta,
+and SysEx dependencies remain in their required order. The returned writer
+reports exact group counts, fallback group counts, byte counts, and whether
+every reordered group was solved exactly:
+
+ writer = seq.write(file, 1, compact: true)
+ writer.compact_report
+
 
 === Editing a MIDI File
 

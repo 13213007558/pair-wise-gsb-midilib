@@ -145,8 +145,9 @@ module MIDI
     end
 
     # Writes to a MIDI stream. +midi_format+ defaults to 1.
-    def write(io, midi_format = 1, &block) # :yields: track, num_tracks, index
+    def write(io, midi_format = 1, compact: false, &block) # :yields: track, num_tracks, index
       writer = @writer_class.new(self, midi_format, &block)
+      writer.compact = compact if writer.respond_to?(:compact=)
       writer.write_to(io)
     end
 

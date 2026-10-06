@@ -277,7 +277,7 @@ module MIDI
     def data_as_bytes
       data = []
       data << @status
-      data << Utils.as_var_len(@data.length)
+      data << Utils.as_var_len(@data.length + 1)
       data << @data
       data << EOX
       data.flatten
