@@ -118,6 +118,24 @@ MIDI::Measure and MIDI::Measures are brought to us by Jari Williamsson
 <jari.williamsson@mailbox.swipnet.se>, who also contributed some improvements
 to the MIDI::Event and MIDI::Track classes.
 
+=== MIDI::Tuning and the MIDI Tuning Standard
+
+MIDI::Tuning is a readable 128-entry tuning table that maps each MIDI note
+number to a pitch in fractional semitones. A table can be carried inside a
+MIDI file as a MIDI Tuning Standard (MTS) bulk tuning dump
+(MIDI::TuningBulkDump) and edited with single note tuning changes
+(MIDI::SingleNoteTuningChange). Both are MIDI::SystemExclusive events, so
+they travel through the normal SMF read/write chain like any other event,
+and they let a file carry non-twelve-tone tunings without per-channel
+pitch bend.
+
+MIDI::MTS.parse recognizes MTS system exclusive messages (for example,
+events read from a file) and returns the corresponding dump or change
+object. MIDI::TuningState applies those messages to a tuning table while
+tracking sounding notes: realtime single note changes re-tune notes that
+are already sounding, while non-realtime changes and bulk dumps only
+affect notes started later.
+
 === MIDI::Event
 
 Each event holds not only its delta time but also its time from the start of

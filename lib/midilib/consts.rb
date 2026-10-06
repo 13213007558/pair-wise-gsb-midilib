@@ -58,6 +58,28 @@ module MIDI
   EOX = 0xF7
 
   #--
+  # System exclusive message components
+  #++
+  # Non-realtime system exclusive ID byte (first data byte after SYSEX)
+  SYSEX_NON_REALTIME = 0x7E
+  # Realtime system exclusive ID byte (first data byte after SYSEX)
+  SYSEX_REALTIME = 0x7F
+  # Device ID that addresses all devices
+  SYSEX_ALL_DEVICES = 0x7F
+  # Sub-ID 1 for MIDI Tuning Standard messages
+  SUB_ID_MIDI_TUNING = 0x08
+
+  #--
+  # MIDI Tuning Standard sub-ID 2 values
+  #++
+  # Bulk tuning dump (non-realtime)
+  MTS_BULK_TUNING_DUMP = 0x01
+  # Single note tuning change (non-realtime)
+  MTS_SINGLE_NOTE_TUNING_CHANGE = 0x02
+  # Single note tuning change (realtime)
+  MTS_SINGLE_NOTE_TUNING_CHANGE_RT = 0x01
+
+  #--
   # System realtime messages
   #++
   # MIDI clock (24 per quarter note)
