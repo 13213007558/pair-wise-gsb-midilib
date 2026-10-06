@@ -141,6 +141,34 @@ string. The MIDI::MetaEvent#data_as_str method returns the data bytes as a
 string. When assigning to a meta event's data, if you pass in a string it will
 get converted to an array of bytes.
 
+=== MIDI Tuning Standard
+
+MIDI::MTS provides MMA RP-012 tuning messages that do not rely on channel
+pitch bend. MIDI::MTS::TuningTable is a readable 128-note table whose values
+are fractional MIDI note numbers; it defaults to equal temperament. A
+MIDI::MTS::BulkTuningDump encodes the complete table and its 7-bit checksum,
+while MIDI::MTS::SingleNoteTuningChange encodes one or more note changes.
+Use nil as a single-note pitch to encode the all-ones no-change sentinel.
+
+Single-note changes may be real-time or non-real-time. A real-time message
+also retunes matching notes that are currently sounding. A non-real-time
+message and a bulk dump update future notes only. MIDI::MTS::TuningState
+applies parsed messages and tracks note-on/note-off pairs so the affected
+sounding notes are explicit. Out-of-range pitches, note numbers, device IDs,
+and tuning programs raise errors instead of being wrapped by modulo.
+
+ table = MIDI::MTS::TuningTable.new
+ table[60] = 60.05
+ dump = MIDI::MTS::BulkTuningDump.new(table, device_id: 0)
+ track.events << dump.to_system_exclusive
+
+ change = MIDI::MTS::SingleNoteTuningChange.new(
+   { 60 => 60.1, 62 => nil }, tuning_program: 0
+ )
+ track.events << change.to_system_exclusive
+
+ decoded = MIDI::MTS::MTSMessage.parse(track.events.first)
+
 
 == How To Use midilib
 

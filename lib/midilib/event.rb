@@ -267,18 +267,33 @@ module MIDI
   end
 
   class SystemExclusive < SystemCommon
-    attr_accessor :data
+    # The data is stored as a complete system exclusive message,
+    # beginning with SYSEX (0xF0) and ending with EOX (0xF7).
+    attr_reader :data
 
     def initialize(data, delta_time = 0)
       super(SYSEX, delta_time)
+      self.data = data
+    end
+
+    def data=(data)
+      data = Array(data).dup
+      data.unshift(SYSEX) unless data.first == SYSEX
+      data << EOX unless data.last == EOX
       @data = data
+    end
+
+    # Returns the manufacturer and payload bytes, without the framing
+    # SYSEX and EOX bytes.
+    def payload
+      @data[1...-1]
     end
 
     def data_as_bytes
       data = []
       data << @status
-      data << Utils.as_var_len(@data.length)
-      data << @data
+      data << Utils.as_var_len(payload.length + 1)
+      data << payload
       data << EOX
       data.flatten
     end
