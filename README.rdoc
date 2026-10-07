@@ -260,6 +260,46 @@ Finally, MIDI::Sequence#note_to_delta takes a note name and returns a delta
 time. It does this by calling note_to_length, then passing the result to
 length_to_delta.
 
+=== Aligning monophonic note sequences
+
+MIDI::MonophonicNoteExtractor turns a monophonic track's note on/off events
+back into note objects. It keeps source and original event information and
+reports problems instead of guessing through ambiguous input. Reported
+problem types are +:overlapping_same_pitch+, +:unpaired_note_on+, and
+:unpaired_note_off+. A note-on with velocity zero is treated as a note-off.
+
+ reference = MIDI::MonophonicNoteExtractor.extract(reference_track,
+                                                   source: :reference)
+ performance = MIDI::MonophonicNoteExtractor.extract(performance_track,
+                                                     source: :performance)
+
+ reference.problems.each { |problem| warn problem.type }
+ performance.problems.each { |problem| warn problem.type }
+
+MIDI::MonophonicAligner finds the globally minimum-cost monotonic alignment.
+Costs may be fixed numbers or callables. A numeric time-deviation cost is
+multiplied by the absolute onset-tick difference; a callable receives that
+difference. Set +bandwidth+ to a non-negative Sakoe-Chiba index limit. The
+result sets +restricted_optimum+ when removing that limit finds a lower cost.
+
+ alignment = MIDI::MonophonicAligner.align(
+   reference.notes, performance.notes,
+   wrong_note_cost: 100,
+   insertion_cost: 1,
+   deletion_cost: 100,
+   time_deviation_cost: 0.01,
+   bandwidth: 8
+ )
+
+ alignment.pairs.each do |pair|
+   [pair.reference_note.on_tick, pair.performance_note.on_tick, pair.cost]
+ end
+ alignment.unmatched_notes # deleted reference notes and inserted notes
+ alignment.timing_map[reference_tick] # interpolated performance tick
+
+For short melodies, +align_exhaustively+ evaluates every complete monotonic
+alignment. Ties use the fixed operation order match, delete, and then insert.
+
 
 === Example Scripts
 

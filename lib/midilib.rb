@@ -8,6 +8,7 @@
 require_relative 'midilib/info'
 require_relative 'midilib/sequence'
 require_relative 'midilib/track'
+require_relative 'midilib/monophonic_aligner'
 require_relative 'midilib/io/seqreader'
 require_relative 'midilib/io/seqwriter'
 
